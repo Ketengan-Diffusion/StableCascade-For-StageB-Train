@@ -2,7 +2,7 @@
 This is a fork to adjusting the training script with single GPU in windows environtment using Adafactor optimizer
 Training script maybe unstable and need adjustment
 
-_____________________________________________________________________________________________________________________________________________________________________________---
+---
 
 Original Repo Readme
 # Stable Cascade
