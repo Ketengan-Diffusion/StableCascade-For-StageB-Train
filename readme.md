@@ -1,3 +1,10 @@
+# Ketengan-Diffusion Fork for experimental Stage-B Training
+This is a fork to adjusting the training script with single GPU in windows environtment using Adafactor optimizer
+Training script maybe unstable and need adjustment
+
+_____________________________________________________________________________________________________________________________________________________________________________---
+
+Original Repo Readme
 # Stable Cascade
 <p align="center">
     <img src="figures/collage_1.jpg" width="800">
