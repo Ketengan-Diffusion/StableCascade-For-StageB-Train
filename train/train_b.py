@@ -4,6 +4,7 @@ from torch import nn, optim
 from transformers import AutoTokenizer, CLIPTextModelWithProjection
 from warmup_scheduler import GradualWarmupScheduler
 import numpy as np
+import sys; sys.path.append('.')
 
 import sys
 import os
@@ -12,6 +13,7 @@ from dataclasses import dataclass
 from gdf import GDF, EpsilonTarget, CosineSchedule
 from gdf import VPScaler, CosineTNoiseCond, DDPMSampler, P2LossWeight, AdaptiveLossWeight
 from torchtools.transforms import SmartCrop
+from transformers import Adafactor
 
 from modules.effnet import EfficientNetEncoder
 from modules.stage_a import StageA
@@ -29,6 +31,19 @@ from torch.distributed.fsdp.wrap import ModuleWrapPolicy
 from accelerate import init_empty_weights
 from accelerate.utils import set_module_tensor_to_device
 from contextlib import contextmanager
+
+class AdafactorWrapper(Adafactor):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.defaults['beta1'] = 0.9
+        self.defaults['beta2'] = 0.999
+
+    def _get_options(self, group, shape):
+        if 'beta1' not in group:
+            group['beta1'] = self.defaults['beta1']
+        if 'beta2' not in group:
+            group['beta2'] = self.defaults['beta2']
+        return super()._get_options(group, shape)
 
 class WurstCore(TrainingCore, DataCore, WarpCore):
     @dataclass(frozen=True)
@@ -209,7 +224,17 @@ class WurstCore(TrainingCore, DataCore, WarpCore):
         )
 
     def setup_optimizers(self, extras: Extras, models: Models) -> TrainingCore.Optimizers:
-        optimizer = optim.AdamW(models.generator.parameters(), lr=self.config.lr)  # , eps=1e-7, betas=(0.9, 0.95))
+        optimizer = Adafactor(
+            models.generator.parameters(),
+            lr=self.config.lr,
+            scale_parameter=False,
+            relative_step=False,
+            warmup_init=False,
+        )
+
+        for param_group in optimizer.param_groups:
+            param_group["beta1"] = 0.9
+
         optimizer = self.load_optimizer(optimizer, 'generator_optim',
                                         fsdp_model=models.generator if self.config.use_fsdp else None)
         return self.Optimizers(generator=optimizer)
@@ -294,11 +319,12 @@ class WurstCore(TrainingCore, DataCore, WarpCore):
 
 if __name__ == '__main__':
     print("Launching Script")
+    single_gpu = True
+
+    # No need for initializing process group if single_gpu is True
     warpcore = WurstCore(
         config_file_path=sys.argv[1] if len(sys.argv) > 1 else None,
-        device=torch.device(int(os.environ.get("SLURM_LOCALID")))
+        device=torch.device('cuda:0')  # Adjust based on the GPU you want to use
     )
-    # core.fsdp_defaults['sharding_strategy'] = ShardingStrategy.NO_SHARD
 
-    # RUN TRAINING
-    warpcore()
+    warpcore(single_gpu=single_gpu)
