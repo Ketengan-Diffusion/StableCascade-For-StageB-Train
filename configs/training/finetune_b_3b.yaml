@@ -1,7 +1,7 @@
 # GLOBAL STUFF
-experiment_id: stage_b_3b_finetuning
-checkpoint_path: /path/to/checkpoint
-output_path: /path/to/output
+experiment_id: stage_b_3b_finetuning # Name of your project
+checkpoint_path: "E:\\checkpoint" # Checkpoint output
+output_path: "E:\\output" # Sample Output (I don't know how this work, the output is generated jpg files)
 model_version: 3B
 
 # WandB
@@ -19,18 +19,16 @@ updates: 100000
 backup_every: 20000
 save_every: 1000
 warmup_updates: 1
-use_fsdp: True
+use_fsdp: False
 
 # GDF
-adaptive_loss_weight: True
+#adaptive_loss_weight: True
 
 # ema_start_iters: 5000
 # ema_iters: 100
 # ema_beta: 0.9
 
-webdataset_path:
-  - s3://path/to/your/first/dataset/on/s3
-  - s3://path/to/your/second/dataset/on/s3
-effnet_checkpoint_path: models/effnet_encoder.safetensors
-stage_a_checkpoint_path: models/stage_a.safetensors
-generator_checkpoint_path: models/stage_b_bf16.safetensors
+webdataset_path: "file:E:/yourfiles.tar" #assuming you are using local files. Amazon S3 maybe disabled in this script
+effnet_checkpoint_path: "E:\\effnet_encoder.safetensors"
+stage_a_checkpoint_path: "E:\\stage_a.safetensors"
+generator_checkpoint_path: "E:\\stage_b_bf16.safetensors"
